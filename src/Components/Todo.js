@@ -1,13 +1,72 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./TodoStyle.css";
 export const Todo = () => {
-  const [inputdata, setInputData] = useState("");
-  const [items, setItems] = useState([]);
-
-  //removeAll item button
-  const removeALLItem = () => {
-    return setItems([]);
+  //Getting data from LOCAL storage
+  const getLocalStorageData = () => {
+    const Lists = localStorage.getItem("myTodoList");
+    if (Lists) {
+      return JSON.parse(Lists);
+    } else {
+      return [];
+    }
   };
+
+  //States initialisation
+  const [inputdata, setInputData] = useState("");
+  const [items, setItems] = useState(getLocalStorageData());
+  const [isEditItem, setIsEditItem] = useState("");
+  const [toggleButton, setToggleButton] = useState(false);
+
+  //setting LOCAL STORAGE
+  useEffect(() => {
+    localStorage.setItem("myTodoList", JSON.stringify(items));
+  }, [items]);
+
+  //input value
+  const inputValue = (event) => {
+    return setInputData(event.target.value);
+  };
+
+  //setting value when we click on + icon
+  const addItem = () => {
+    if (!inputdata) {
+      alert("Please add something in TODO");
+    } 
+    else if (inputdata && toggleButton) {
+      setItems(
+        items.map((curElem) => {
+          if (curElem.id === isEditItem) {
+            return { ...curElem, name: inputdata };
+          }
+          return curElem;
+        })
+      );
+
+      setInputData([]);
+      setIsEditItem(null);
+      setToggleButton(false);
+    }
+    else {
+      const uniqueId = {
+        id: new Date().getTime().toString(),
+        name: inputdata,
+      };
+
+      setItems([...items, uniqueId]);
+      setInputData("");
+    }
+  };
+
+  //edit particular Item
+  const editItem=(index)=>{
+    const itemTodoEdited = items.find((curElem) => {
+      return curElem.id === index;
+    });
+    setInputData(itemTodoEdited.name);
+    setIsEditItem(index);
+    setToggleButton(true);
+  }
+
   // ..delete item icon we are passing id from onclick
   const deleteItem = (index) => {
     const finalItems = items.filter((currElem) => {
@@ -16,24 +75,11 @@ export const Todo = () => {
     setItems(finalItems);
   };
 
-  //input value
-  const inputValue = (event) => {
-    return setInputData(event.target.value);
+  //removeAll item button
+  const removeALLItem = () => {
+    return setItems([]);
   };
-  //setting value when we click on + icon
-  const addItem = () => {
-    if (!inputdata) {
-      alert("Please add something in TODO");
-    } else {
-      const uniqueId = {
-        id: new Date().getTime().toString(),
-        name: inputdata,
-      };
 
-      setItems([...items, uniqueId]);
-      setInputData("")
-    }
-  };
   return (
     <div className="main-div">
       <div className="child-div">
@@ -50,20 +96,27 @@ export const Todo = () => {
             value={inputdata}
             onChange={inputValue}
           />
-          <i className="fa fa-plus" onClick={addItem}></i>
+         {toggleButton ? (
+              <i className="far fa-edit add-btn" onClick={addItem}></i>
+            ) : (
+              <i className="fa fa-plus add-btn" onClick={addItem}></i>
+            )}
         </div>
 
         {/* show todo item */}
         <div className="showItems">
-          {items.map((e, i) => {
+          {items.map((currElem) => {
             return (
-              <div className="eachItem" key={i}>
-                <h3>{e.name}</h3>
+              <div className="eachItem" key={currElem.id}>
+                <h3>{currElem.name}</h3>
                 <div className="todo-btn">
-                  <i className="far fa-edit add-btn"></i>
+                  <i
+                    className="far fa-edit add-btn"
+                    onClick={() => editItem(currElem.id)}
+                  ></i>
                   <i
                     className="far fa-trash-alt add-btn"
-                    onClick={() => deleteItem(e.id)}
+                    onClick={() => deleteItem(currElem.id)}
                   ></i>
                 </div>
               </div>
